@@ -418,12 +418,32 @@ body {
   overflow: hidden;
 }
 
+.viewfinder__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.camera-status {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
 .viewfinder__corner {
   position: absolute;
   width: 30px;
   height: 30px;
   border: 2.5px solid var(--cyan);
   opacity: 0.9;
+  z-index: 2;
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.6));
 }
 
 .viewfinder__corner--tl {
@@ -460,6 +480,7 @@ body {
 
 .scan-line {
   position: absolute;
+  z-index: 2;
   left: 10%;
   right: 10%;
   height: 2px;
@@ -479,6 +500,7 @@ body {
 
 .product-chip {
   position: absolute;
+  z-index: 3;
   left: 14px;
   right: 14px;
   bottom: 14px;
@@ -601,6 +623,68 @@ body {
   gap: 12px;
   padding: 9px 2px;
   font-size: 13.5px;
+}
+
+.priority-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 13px 14px;
+  border-radius: var(--radius);
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.1s ease;
+}
+
+.priority-toggle:hover {
+  border-color: var(--border-bright);
+}
+
+.priority-toggle:active {
+  transform: scale(0.99);
+}
+
+.priority-toggle--on {
+  border-color: rgba(247, 201, 72, 0.45);
+  background: linear-gradient(
+    180deg,
+    rgba(247, 201, 72, 0.1),
+    rgba(247, 201, 72, 0.02)
+  );
+}
+
+.priority-toggle__star {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--card-inset);
+  border: 1px solid var(--border);
+  color: var(--faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.priority-toggle--on .priority-toggle__star {
+  color: var(--gold);
+  border-color: rgba(247, 201, 72, 0.45);
+}
+
+.pill--gold {
+  color: var(--gold);
+  background: rgba(247, 201, 72, 0.12);
+  border: 1px solid rgba(247, 201, 72, 0.4);
 }
 
 .rule-row__icon {

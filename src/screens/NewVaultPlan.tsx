@@ -4,9 +4,14 @@ import { HOW_IT_RUNS, PIPELINE_STEPS, PRODUCT, formatMoney } from "../data";
 const STEP_INTERVAL_MS = 750;
 const PLAN_REVEAL_DELAY_MS = 450;
 
+const PRIORITY_RULE = {
+  icon: "★",
+  text: "This Vault saves first — Japan fund moves to #2",
+};
+
 interface NewVaultPlanProps {
   onBack: () => void;
-  onApprove: () => void;
+  onApprove: (topPriority: boolean) => void;
   onManualAmount: () => void;
 }
 
@@ -18,6 +23,14 @@ export function NewVaultPlan({
   // Number of pipeline steps completed; the step at this index is "running".
   const [doneCount, setDoneCount] = useState(0);
   const [showPlan, setShowPlan] = useState(false);
+  const [topPriority, setTopPriority] = useState(false);
+
+  // Priority reshuffles the plan: the last rule swaps depending on the toggle.
+  const rules = topPriority
+    ? HOW_IT_RUNS.map((rule) =>
+        rule.text.includes("priority") ? PRIORITY_RULE : rule,
+      )
+    : HOW_IT_RUNS;
 
   useEffect(() => {
     if (doneCount < PIPELINE_STEPS.length) {
@@ -121,7 +134,7 @@ export function NewVaultPlan({
 
           <div className="kicker">How it runs</div>
           <div className="card" style={{ paddingTop: 6, paddingBottom: 6 }}>
-            {HOW_IT_RUNS.map((rule) => (
+            {rules.map((rule) => (
               <div key={rule.text} className="rule-row">
                 <div className="rule-row__icon">{rule.icon}</div>
                 <span>{rule.text}</span>
@@ -130,9 +143,30 @@ export function NewVaultPlan({
           </div>
 
           <button
+            className={
+              topPriority ? "priority-toggle priority-toggle--on" : "priority-toggle"
+            }
+            aria-pressed={topPriority}
+            onClick={() => setTopPriority((on) => !on)}
+          >
+            <div className="priority-toggle__star">★</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 700 }}>
+                Make it top priority
+              </div>
+              <div className="muted small">
+                Saves first each payday, ahead of your other Vaults
+              </div>
+            </div>
+            <span className={topPriority ? "pill pill--gold" : "pill pill--muted"}>
+              {topPriority ? "On" : "Off"}
+            </span>
+          </button>
+
+          <button
             className="btn btn--primary"
             style={{ marginTop: "auto" }}
-            onClick={onApprove}
+            onClick={() => onApprove(topPriority)}
           >
             Approve plan
           </button>

@@ -53,17 +53,29 @@ export default function App() {
     setScreen("detail");
   };
 
-  const approvePlan = () => {
+  const approvePlan = (topPriority: boolean) => {
     // Demo shortcut: the vault lands mid-journey so the detail screen has a story.
-    setVaults((prev) =>
-      prev.some((v) => v.id === ESPRESSO_VAULT_ID)
+    setVaults((prev) => {
+      const withEspresso = prev.some((v) => v.id === ESPRESSO_VAULT_ID)
         ? prev
-        : [espressoTemplate(), ...prev],
-    );
+        : [espressoTemplate(), ...prev];
+      // Only one Vault holds the star: priority moves here when toggled on.
+      return withEspresso.map((vault) =>
+        vault.id === ESPRESSO_VAULT_ID
+          ? { ...vault, priority: topPriority }
+          : topPriority
+            ? { ...vault, priority: false }
+            : vault,
+      );
+    });
     setActiveVaultId(ESPRESSO_VAULT_ID);
     setAutoAdvanced(false);
     setScreen("detail");
-    setToast("↻ Vault created · Smart Autosave armed");
+    setToast(
+      topPriority
+        ? "★ Priority Vault created · saves first each payday"
+        : "↻ Vault created · Smart Autosave armed",
+    );
   };
 
   const simulatePayday = () => {
