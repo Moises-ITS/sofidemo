@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { HOW_IT_RUNS, PIPELINE_STEPS, PRODUCT, formatMoney } from "../data";
+import { HOW_IT_RUNS, formatMoney, makePipelineSteps } from "../data";
+import type { Product } from "../types";
 
 const STEP_INTERVAL_MS = 750;
 const PLAN_REVEAL_DELAY_MS = 450;
@@ -10,12 +11,14 @@ const PRIORITY_RULE = {
 };
 
 interface NewVaultPlanProps {
+  product: Product;
   onBack: () => void;
   onApprove: (topPriority: boolean) => void;
   onManualAmount: () => void;
 }
 
 export function NewVaultPlan({
+  product,
   onBack,
   onApprove,
   onManualAmount,
@@ -25,6 +28,8 @@ export function NewVaultPlan({
   const [showPlan, setShowPlan] = useState(false);
   const [topPriority, setTopPriority] = useState(false);
 
+  const steps = makePipelineSteps(product);
+
   // Priority reshuffles the plan: the last rule swaps depending on the toggle.
   const rules = topPriority
     ? HOW_IT_RUNS.map((rule) =>
@@ -33,7 +38,7 @@ export function NewVaultPlan({
     : HOW_IT_RUNS;
 
   useEffect(() => {
-    if (doneCount < PIPELINE_STEPS.length) {
+    if (doneCount < steps.length) {
       const timer = window.setTimeout(
         () => setDoneCount((n) => n + 1),
         STEP_INTERVAL_MS,
@@ -45,7 +50,7 @@ export function NewVaultPlan({
       PLAN_REVEAL_DELAY_MS,
     );
     return () => window.clearTimeout(timer);
-  }, [doneCount]);
+  }, [doneCount, steps.length]);
 
   return (
     <div className="screen">
@@ -65,7 +70,7 @@ export function NewVaultPlan({
             Building your plan
           </div>
           <div className="card pipeline-list">
-            {PIPELINE_STEPS.map((step, i) => {
+            {steps.map((step, i) => {
               const state =
                 i < doneCount ? "done" : i === doneCount ? "running" : "queued";
               return (
@@ -100,20 +105,22 @@ export function NewVaultPlan({
         <>
           <div className="card card--raised">
             <div className="vault-row">
-              <div className="vault-icon">☕</div>
+              <div className="vault-icon">{product.emoji}</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 15, fontWeight: 700 }}>
-                  {PRODUCT.name}
+                  {product.name}
                 </div>
                 <div className="muted small">
-                  Best price · checked at {PRODUCT.retailers} retailers
+                  {product.retailers > 0
+                    ? `Best price · checked at ${product.retailers} retailers`
+                    : "Best price · agent estimate"}
                 </div>
               </div>
               <div style={{ textAlign: "right" }}>
                 <div className="tone-cyan" style={{ fontSize: 17, fontWeight: 800 }}>
-                  {formatMoney(PRODUCT.bestPrice)}
+                  {formatMoney(product.bestPrice)}
                 </div>
-                <div className="strike">{formatMoney(PRODUCT.inStorePrice)}</div>
+                <div className="strike">{formatMoney(product.inStorePrice)}</div>
               </div>
             </div>
           </div>
@@ -121,14 +128,14 @@ export function NewVaultPlan({
           <div className="autosave-hero">
             <div className="pill pill--cyan">↻ Smart Autosave</div>
             <div className="autosave-hero__amount">
-              {formatMoney(PRODUCT.perPayday)} <span>this payday</span>
+              {formatMoney(product.perPayday)} <span>this payday</span>
             </div>
             <div className="muted small">
               Set from your income, bills, and your other Vaults
             </div>
             <div className="small" style={{ marginTop: 4 }}>
-              Goal {formatMoney(PRODUCT.bestPrice)} ·{" "}
-              <span className="muted">Est. {PRODUCT.window}</span>
+              Goal {formatMoney(product.bestPrice)} ·{" "}
+              <span className="muted">Est. {product.window}</span>
             </div>
           </div>
 

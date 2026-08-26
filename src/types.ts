@@ -23,6 +23,19 @@ export interface Vault {
   activity: readonly ActivityItem[];
 }
 
+export interface Product {
+  name: string;
+  emoji: string;
+  bestPrice: number;
+  inStorePrice: number;
+  /** Retailers price-checked; 0 = agent estimate only (no price API hit). */
+  retailers: number;
+  perPayday: number;
+  window: string;
+  /** true = came from real camera recognition; false = canned demo product. */
+  live: boolean;
+}
+
 export interface PipelineStep {
   id: string;
   label: string;
