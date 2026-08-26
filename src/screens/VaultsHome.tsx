@@ -36,11 +36,10 @@ export function VaultsHome({ vaults, onSofiIt, onOpenVault }: VaultsHomeProps) {
         <div className="autosave-banner__icon">↻</div>
         <div>
           <div style={{ fontSize: 13.5, fontWeight: 700 }}>
-            Smart Autosave · next payday Fri
+            Smart Autosave
           </div>
           <div className="muted small">
-            {formatMoney(totalPerPayday)} across {vaults.length} Vaults · you
-            approved this plan
+            {formatMoney(totalPerPayday)} across {vaults.length} Vaults
           </div>
         </div>
       </div>
@@ -66,7 +65,7 @@ export function VaultsHome({ vaults, onSofiIt, onOpenVault }: VaultsHomeProps) {
                 {vault.status === "funded" ? (
                   <Pill tone="green">✓ Funded</Pill>
                 ) : (
-                  <Pill tone="cyan">+${vault.perPayday} payday</Pill>
+                  <Pill tone="cyan">+${vault.perPayday}/payday</Pill>
                 )}
               </div>
               <ProgressBar

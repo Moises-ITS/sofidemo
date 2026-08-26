@@ -72,7 +72,7 @@ export default function App() {
     setScreen("newVault");
   };
 
-  const approvePlan = (topPriority: boolean) => {
+  const approvePlan = (topPriority: boolean, perPayday: number) => {
     // The canned demo product reuses the espresso vault; a live-recognized
     // product gets a fresh vault of its own.
     const id = product.live ? `v-${Date.now()}` : ESPRESSO_VAULT_ID;
@@ -83,7 +83,7 @@ export default function App() {
       // Only one Vault holds the star: priority moves here when toggled on.
       return withVault.map((vault) =>
         vault.id === id
-          ? { ...vault, priority: topPriority }
+          ? { ...vault, priority: topPriority, perPayday }
           : topPriority
             ? { ...vault, priority: false }
             : vault,
@@ -171,9 +171,6 @@ export default function App() {
             product={product}
             onBack={() => setScreen("capture")}
             onApprove={approvePlan}
-            onManualAmount={() =>
-              setToast("Demo: Smart Autosave picks the amount here")
-            }
           />
         )}
         {screen === "detail" && activeVault && (

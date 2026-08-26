@@ -22,6 +22,9 @@ export function Capture({ onClose, onStartVault }: CaptureProps) {
   const [camera, setCamera] = useState<CameraState>("starting");
   const [scan, setScan] = useState<ScanState>("idle");
   const [product, setProduct] = useState<Product | null>(null);
+  // Frozen frame shown while the agent identifies the photo — makes it clear
+  // a single photo was captured, not a live feed.
+  const [snapshot, setSnapshot] = useState<string | null>(null);
 
   // Open the device camera (asks the browser for permission).
   useEffect(() => {
@@ -85,7 +88,9 @@ export function Capture({ onClose, onStartVault }: CaptureProps) {
       const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("canvas unavailable");
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const image = canvas.toDataURL("image/jpeg", JPEG_QUALITY).split(",")[1];
+      const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+      setSnapshot(dataUrl);
+      const image = dataUrl.split(",")[1];
 
       const controller = new AbortController();
       const timer = window.setTimeout(() => controller.abort(), API_TIMEOUT_MS);
@@ -108,6 +113,7 @@ export function Capture({ onClose, onStartVault }: CaptureProps) {
 
   const retake = () => {
     setProduct(null);
+    setSnapshot(null);
     setScan("idle");
   };
 
@@ -136,8 +142,16 @@ export function Capture({ onClose, onStartVault }: CaptureProps) {
           autoPlay
           playsInline
           muted
-          style={{ display: camera === "live" ? "block" : "none" }}
+          style={{ display: camera === "live" && !snapshot ? "block" : "none" }}
         />
+
+        {snapshot && (
+          <img
+            src={snapshot}
+            className="viewfinder__video"
+            alt="Captured photo"
+          />
+        )}
 
         <span className="viewfinder__corner viewfinder__corner--tl" />
         <span className="viewfinder__corner viewfinder__corner--tr" />
@@ -175,8 +189,7 @@ export function Capture({ onClose, onStartVault }: CaptureProps) {
                 Best price{" "}
                 <span className="tone-cyan" style={{ fontWeight: 700 }}>
                   {formatMoney(product.bestPrice)}
-                </span>{" "}
-                · {formatMoney(product.inStorePrice)} in store
+                </span>
               </div>
             </div>
           </div>

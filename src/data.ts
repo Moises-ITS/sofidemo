@@ -179,7 +179,7 @@ export const makePipelineSteps = (p: Product): readonly PipelineStep[] => [
       p.retailers > 0
         ? `Checking ${p.retailers} retailers for best price`
         : "Estimating the going price",
-    result: `${formatMoney(p.bestPrice)} · ${formatMoney(p.inStorePrice)} in store`,
+    result: formatMoney(p.bestPrice),
   },
   {
     id: "income",
@@ -189,7 +189,7 @@ export const makePipelineSteps = (p: Product): readonly PipelineStep[] => [
   {
     id: "bills",
     label: "Checking bills & your other Vaults",
-    result: "Japan fund keeps priority",
+    result: "Your other Vaults stay on track",
   },
   {
     id: "amount",
@@ -202,5 +202,4 @@ export const HOW_IT_RUNS: readonly { icon: string; text: string }[] = [
   { icon: "↻", text: "Adjusts every payday with your income" },
   { icon: "⌃", text: "Never more than $60 a week" },
   { icon: "🛡", text: "Skips if Checking falls below $2,000" },
-  { icon: "★", text: "Japan fund keeps priority" },
 ];

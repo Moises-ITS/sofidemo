@@ -1,41 +1,46 @@
 import { useEffect, useState } from "react";
-import { HOW_IT_RUNS, formatMoney, makePipelineSteps } from "../data";
+import { HOW_IT_RUNS, estWindow, formatMoney, makePipelineSteps } from "../data";
 import type { Product } from "../types";
 
 const STEP_INTERVAL_MS = 750;
 const PLAN_REVEAL_DELAY_MS = 450;
+const PACE_STEP = 5;
+const PACE_MIN = 5;
+const PACE_MAX = 60;
 
 const PRIORITY_RULE = {
   icon: "★",
-  text: "This Vault saves first — Japan fund moves to #2",
+  text: "This Vault saves first — others move down one",
 };
 
 interface NewVaultPlanProps {
   product: Product;
   onBack: () => void;
-  onApprove: (topPriority: boolean) => void;
-  onManualAmount: () => void;
+  onApprove: (topPriority: boolean, perPayday: number) => void;
 }
 
-export function NewVaultPlan({
-  product,
-  onBack,
-  onApprove,
-  onManualAmount,
-}: NewVaultPlanProps) {
+export function NewVaultPlan({ product, onBack, onApprove }: NewVaultPlanProps) {
   // Number of pipeline steps completed; the step at this index is "running".
   const [doneCount, setDoneCount] = useState(0);
   const [showPlan, setShowPlan] = useState(false);
   const [topPriority, setTopPriority] = useState(false);
+  const [pace, setPace] = useState(product.perPayday);
+  const [amountModal, setAmountModal] = useState(false);
+  const [draftPace, setDraftPace] = useState(product.perPayday);
 
   const steps = makePipelineSteps(product);
+  const window_ =
+    pace === product.perPayday
+      ? product.window
+      : estWindow(product.bestPrice, pace);
 
-  // Priority reshuffles the plan: the last rule swaps depending on the toggle.
-  const rules = topPriority
-    ? HOW_IT_RUNS.map((rule) =>
-        rule.text.includes("priority") ? PRIORITY_RULE : rule,
-      )
-    : HOW_IT_RUNS;
+  // Priority reshuffles the plan: an extra rule appears when the toggle is on.
+  const rules = topPriority ? [...HOW_IT_RUNS, PRIORITY_RULE] : HOW_IT_RUNS;
+
+  const nudgeDraft = (direction: 1 | -1) =>
+    setDraftPace((n) =>
+      Math.min(PACE_MAX, Math.max(PACE_MIN, n + direction * PACE_STEP)),
+    );
 
   useEffect(() => {
     if (doneCount < steps.length) {
@@ -116,11 +121,8 @@ export function NewVaultPlan({
                     : "Best price · agent estimate"}
                 </div>
               </div>
-              <div style={{ textAlign: "right" }}>
-                <div className="tone-cyan" style={{ fontSize: 17, fontWeight: 800 }}>
-                  {formatMoney(product.bestPrice)}
-                </div>
-                <div className="strike">{formatMoney(product.inStorePrice)}</div>
+              <div className="tone-cyan" style={{ fontSize: 17, fontWeight: 800 }}>
+                {formatMoney(product.bestPrice)}
               </div>
             </div>
           </div>
@@ -128,14 +130,16 @@ export function NewVaultPlan({
           <div className="autosave-hero">
             <div className="pill pill--cyan">↻ Smart Autosave</div>
             <div className="autosave-hero__amount">
-              {formatMoney(product.perPayday)} <span>this payday</span>
+              {formatMoney(pace)} <span>this payday</span>
             </div>
             <div className="muted small">
-              Set from your income, bills, and your other Vaults
+              {pace === product.perPayday
+                ? "Set from your income, bills, and your other Vaults"
+                : "Set by you — Smart Autosave adjusts around it"}
             </div>
             <div className="small" style={{ marginTop: 4 }}>
               Goal {formatMoney(product.bestPrice)} ·{" "}
-              <span className="muted">Est. {product.window}</span>
+              <span className="muted">Est. {window_}</span>
             </div>
           </div>
 
@@ -173,14 +177,79 @@ export function NewVaultPlan({
           <button
             className="btn btn--primary"
             style={{ marginTop: "auto" }}
-            onClick={() => onApprove(topPriority)}
+            onClick={() => onApprove(topPriority, pace)}
           >
             Approve plan
           </button>
-          <button className="link-btn" onClick={onManualAmount}>
+          <button
+            className="link-btn"
+            onClick={() => {
+              setDraftPace(pace);
+              setAmountModal(true);
+            }}
+          >
             Set the amount myself
           </button>
         </>
+      )}
+
+      {amountModal && (
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Set your per-payday amount"
+        >
+          <div className="modal">
+            <div style={{ fontSize: 16, fontWeight: 800 }}>Set your amount</div>
+            <div className="muted small" style={{ marginTop: 4 }}>
+              Smart Autosave adjusts around whatever you pick — your $2,000
+              Checking floor still applies.
+            </div>
+
+            <div className="amount-stepper">
+              <button
+                className="amount-stepper__btn"
+                aria-label="Decrease amount"
+                disabled={draftPace <= PACE_MIN}
+                onClick={() => nudgeDraft(-1)}
+              >
+                −
+              </button>
+              <div className="amount-stepper__value">
+                {formatMoney(draftPace)}
+                <span>per payday</span>
+              </div>
+              <button
+                className="amount-stepper__btn"
+                aria-label="Increase amount"
+                disabled={draftPace >= PACE_MAX}
+                onClick={() => nudgeDraft(1)}
+              >
+                +
+              </button>
+            </div>
+
+            <div className="muted small" style={{ textAlign: "center" }}>
+              Est. funded{" "}
+              {estWindow(product.bestPrice, draftPace)}
+            </div>
+
+            <button
+              className="btn btn--primary"
+              style={{ marginTop: 14 }}
+              onClick={() => {
+                setPace(draftPace);
+                setAmountModal(false);
+              }}
+            >
+              Use {formatMoney(draftPace)} per payday
+            </button>
+            <button className="link-btn" onClick={() => setAmountModal(false)}>
+              Cancel
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
