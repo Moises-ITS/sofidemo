@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { formatMoney } from "../data";
 import { Pill } from "../components/Pill";
+import { ShareCard } from "../components/ShareCard";
 import type { FundedChoice, Vault } from "../types";
 
 interface ForkOption {
@@ -58,6 +59,7 @@ interface FundedProps {
 
 export function Funded({ vault, onChoose }: FundedProps) {
   const [confirmed, setConfirmed] = useState<FundedChoice | null>(null);
+  const [showShare, setShowShare] = useState(false);
 
   if (confirmed) {
     const confirmation = confirmations(vault)[confirmed];
@@ -118,6 +120,10 @@ export function Funded({ vault, onChoose }: FundedProps) {
         </div>
       </div>
 
+      <button className="btn btn--ghost" onClick={() => setShowShare(true)}>
+        📤 Share the win <span className="muted small">debt-free unboxing</span>
+      </button>
+
       {forkOptions(vault).map((option) => (
         <button
           key={option.choice}
@@ -134,6 +140,10 @@ export function Funded({ vault, onChoose }: FundedProps) {
           <span className="fork-option__chevron">›</span>
         </button>
       ))}
+
+      {showShare && (
+        <ShareCard vault={vault} onClose={() => setShowShare(false)} />
+      )}
     </div>
   );
 }
