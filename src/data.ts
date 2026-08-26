@@ -5,13 +5,25 @@ export const ESPRESSO_VAULT_ID = "espresso";
 export const formatMoney = (n: number): string =>
   "$" + n.toLocaleString("en-US");
 
-/** Per-payday pace: ~17 paydays to goal, rounded to $5 steps, clamped $10–$60. */
-export const suggestPace = (price: number): number =>
-  Math.min(60, Math.max(10, Math.round(price / 17 / 5) * 5));
+/** Minimum-save floor: Smart Autosave never puts away less than this. */
+export const MIN_PACE = 10;
+/** Weekly cap — matches the "never more than $60 a week" rule. */
+export const MAX_PACE = 60;
+
+/**
+ * Per-payday pace, scaled to the square root of price so small wants fund in
+ * a payday or two and big wants spread out (~7 paydays at $100, ~18 at $600).
+ * In $5 steps, clamped to the $10 floor and $60 weekly cap.
+ */
+export const suggestPace = (price: number): number => {
+  const raw = Math.round(Math.sqrt(2 * Math.max(1, price)) / 5) * 5;
+  return Math.min(MAX_PACE, Math.max(MIN_PACE, raw));
+};
 
 /** Estimated funding window, e.g. "Dec 21 – Jan 4". */
 export const estWindow = (price: number, pace: number): string => {
   const weeks = Math.max(1, Math.ceil(price / pace));
+  if (weeks <= 1) return "next payday";
   const day = 86_400_000;
   const fmt = (d: Date) =>
     d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -201,5 +213,6 @@ export const makePipelineSteps = (p: Product): readonly PipelineStep[] => [
 export const HOW_IT_RUNS: readonly { icon: string; text: string }[] = [
   { icon: "↻", text: "Adjusts every payday with your income" },
   { icon: "⌃", text: "Never more than $60 a week" },
+  { icon: "⌄", text: "At least $10 a payday — small wants fund fast" },
   { icon: "🛡", text: "Skips if Checking falls below $2,000" },
 ];

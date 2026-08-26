@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
-import { HOW_IT_RUNS, estWindow, formatMoney, makePipelineSteps } from "../data";
+import {
+  HOW_IT_RUNS,
+  MAX_PACE,
+  MIN_PACE,
+  estWindow,
+  formatMoney,
+  makePipelineSteps,
+} from "../data";
 import type { Product } from "../types";
 
 const STEP_INTERVAL_MS = 750;
 const PLAN_REVEAL_DELAY_MS = 450;
 const PACE_STEP = 5;
-const PACE_MIN = 5;
-const PACE_MAX = 60;
 
 const PRIORITY_RULE = {
   icon: "★",
@@ -39,7 +44,7 @@ export function NewVaultPlan({ product, onBack, onApprove }: NewVaultPlanProps) 
 
   const nudgeDraft = (direction: 1 | -1) =>
     setDraftPace((n) =>
-      Math.min(PACE_MAX, Math.max(PACE_MIN, n + direction * PACE_STEP)),
+      Math.min(MAX_PACE, Math.max(MIN_PACE, n + direction * PACE_STEP)),
     );
 
   useEffect(() => {
@@ -133,9 +138,11 @@ export function NewVaultPlan({ product, onBack, onApprove }: NewVaultPlanProps) 
               {formatMoney(pace)} <span>this payday</span>
             </div>
             <div className="muted small">
-              {pace === product.perPayday
-                ? "Set from your income, bills, and your other Vaults"
-                : "Set by you — Smart Autosave adjusts around it"}
+              {product.bestPrice <= MIN_PACE
+                ? `Below your ${formatMoney(MIN_PACE)} minimum save — funds in one payday`
+                : pace === product.perPayday
+                  ? "Set from your income, bills, and your other Vaults"
+                  : "Set by you — Smart Autosave adjusts around it"}
             </div>
             <div className="small" style={{ marginTop: 4 }}>
               Goal {formatMoney(product.bestPrice)} ·{" "}
@@ -211,7 +218,7 @@ export function NewVaultPlan({ product, onBack, onApprove }: NewVaultPlanProps) 
               <button
                 className="amount-stepper__btn"
                 aria-label="Decrease amount"
-                disabled={draftPace <= PACE_MIN}
+                disabled={draftPace <= MIN_PACE}
                 onClick={() => nudgeDraft(-1)}
               >
                 −
@@ -223,7 +230,7 @@ export function NewVaultPlan({ product, onBack, onApprove }: NewVaultPlanProps) 
               <button
                 className="amount-stepper__btn"
                 aria-label="Increase amount"
-                disabled={draftPace >= PACE_MAX}
+                disabled={draftPace >= MAX_PACE}
                 onClick={() => nudgeDraft(1)}
               >
                 +
