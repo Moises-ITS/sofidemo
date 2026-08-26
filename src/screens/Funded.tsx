@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { PRODUCT, formatMoney } from "../data";
+import { formatMoney } from "../data";
 import { Pill } from "../components/Pill";
-import type { FundedChoice } from "../types";
+import type { FundedChoice, Vault } from "../types";
 
 interface ForkOption {
   choice: FundedChoice;
@@ -11,19 +11,19 @@ interface ForkOption {
   featured?: boolean;
 }
 
-const FORK_OPTIONS: readonly ForkOption[] = [
+const forkOptions = (vault: Vault): readonly ForkOption[] => [
   {
     choice: "buy",
     icon: "🔒",
     title: "Buy it now",
-    detail: `Single-use virtual card for exactly ${formatMoney(PRODUCT.bestPrice)}`,
+    detail: `Single-use virtual card for exactly ${formatMoney(vault.goal)}`,
     featured: true,
   },
   {
     choice: "invest",
     icon: "📈",
     title: "Invest it instead",
-    detail: `Move ${formatMoney(PRODUCT.bestPrice)} to SoFi Invest`,
+    detail: `Move ${formatMoney(vault.goal)} to SoFi Invest`,
   },
   {
     choice: "next",
@@ -33,30 +33,34 @@ const FORK_OPTIONS: readonly ForkOption[] = [
   },
 ];
 
-const CONFIRMATIONS: Record<FundedChoice, { title: string; detail: string }> = {
+const confirmations = (
+  vault: Vault,
+): Record<FundedChoice, { title: string; detail: string }> => ({
   buy: {
     title: "Virtual card ready",
-    detail: `A single-use card for exactly ${formatMoney(PRODUCT.bestPrice)} is in your wallet. Go get that espresso machine.`,
+    detail: `A single-use card for exactly ${formatMoney(vault.goal)} is in your wallet. Go get that ${vault.name.toLowerCase()}.`,
   },
   invest: {
-    title: `${formatMoney(PRODUCT.bestPrice)} moved to SoFi Invest`,
-    detail: "Delayed gratification, upgraded. It keeps working while you decide what's next.",
+    title: `${formatMoney(vault.goal)} moved to SoFi Invest`,
+    detail:
+      "Delayed gratification, upgraded. It keeps working while you decide what's next.",
   },
   next: {
     title: "On to the next want",
-    detail: `Your ${formatMoney(PRODUCT.bestPrice)} rolls into whatever you point at next.`,
+    detail: `Your ${formatMoney(vault.goal)} rolls into whatever you point at next.`,
   },
-};
+});
 
 interface FundedProps {
+  vault: Vault;
   onChoose: (choice: FundedChoice) => void;
 }
 
-export function Funded({ onChoose }: FundedProps) {
+export function Funded({ vault, onChoose }: FundedProps) {
   const [confirmed, setConfirmed] = useState<FundedChoice | null>(null);
 
   if (confirmed) {
-    const confirmation = CONFIRMATIONS[confirmed];
+    const confirmation = confirmations(vault)[confirmed];
     return (
       <div className="screen">
         <div className="confirm-panel">
@@ -84,7 +88,7 @@ export function Funded({ onChoose }: FundedProps) {
       <div className="funded-banner">
         <Pill tone="green">✓ Fully funded</Pill>
         <span className="muted small">
-          17 weeks · {formatMoney(PRODUCT.bestPrice)} saved
+          {formatMoney(vault.goal)} saved · payday by payday
         </span>
       </div>
 
@@ -101,20 +105,20 @@ export function Funded({ onChoose }: FundedProps) {
 
       <div className="card card--raised">
         <div className="vault-row">
-          <div className="vault-icon">☕</div>
+          <div className="vault-icon">{vault.icon}</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 15, fontWeight: 700 }}>{PRODUCT.name}</div>
+            <div style={{ fontSize: 15, fontWeight: 700 }}>{vault.name}</div>
             <div className="muted small">
-              Best price still {formatMoney(PRODUCT.bestPrice)} · card ready
+              Best price still {formatMoney(vault.goal)} · card ready
             </div>
           </div>
           <div className="tone-cyan" style={{ fontSize: 17, fontWeight: 800 }}>
-            {formatMoney(PRODUCT.bestPrice)}
+            {formatMoney(vault.goal)}
           </div>
         </div>
       </div>
 
-      {FORK_OPTIONS.map((option) => (
+      {forkOptions(vault).map((option) => (
         <button
           key={option.choice}
           className={

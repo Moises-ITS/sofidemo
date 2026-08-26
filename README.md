@@ -1,57 +1,40 @@
-# Worth It — "What is it worth?"
+# SoFi It — demo
 
-One-day demo app: photograph a consumer item, an AI vision model identifies it,
-a shopping search API finds its current retail price, and the item lands in a
-personal Library with live value statistics (persisted in localStorage).
+Snap a photo of something you want → the agent identifies it, prices it, and
+builds a Vault savings plan.
 
-## Quick start
+## Run it
 
 ```bash
 npm install
-copy .env.example .env    # then paste in your keys
-npm run dev               # starts API (:3001) + web app (:5173) together
+cp .env.example .env   # then paste your ANTHROPIC_API_KEY into .env
+
+npm run dev:api        # terminal 1 — recognition server on :8787
+npm run dev            # terminal 2 — app on http://localhost:5173
 ```
 
-Open http://localhost:5173.
+Camera works on localhost (browsers treat it as a secure context). Testing on
+a phone over LAN won't get camera access — that needs HTTPS (i.e. a deploy).
 
-## Environment variables (.env)
+## How recognition works
 
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `OPENAI_API_KEY` | for real identification | Vision model behind `POST /api/analyze`. Without it the server returns a canned mock so the UI flow still demos. |
-| `OPENAI_MODEL` | no | Override the vision model (default `gpt-4o-mini`). |
-| `SERPAPI_API_KEY` | one of these | Google Shopping via SerpAPI (tried first). |
-| `SERPER_API_KEY` | one of these | Serper.dev shopping search (fallback provider). |
-| `PORT` | no | API port (default 3001 — the Vite proxy expects this). |
+`src/screens/Capture.tsx` grabs a downscaled JPEG frame from the viewfinder
+and POSTs it to `/api/recognize` (proxied to `server/api.mjs`). The server
+asks a vision model to identify the product with **schema-constrained JSON
+output** (`{label, emoji, search_query, price, price_low, price_high}`), so
+the response always parses. Both providers are supported — Claude structured
+outputs or OpenAI strict `json_schema` mode. Set `ANTHROPIC_API_KEY` and/or
+`OPENAI_API_KEY`; `VISION_PROVIDER=claude|openai` picks when both are set
+(default: claude).
 
-Keys are only read server-side; nothing secret ships to the browser.
+Pricing has two modes:
 
-## Demo resilience
+- **Estimate** (default): Claude's price estimate, shown as "agent estimate".
+- **Live prices**: set `SERPAPI_KEY` in `.env` (serpapi.com, free tier) and the
+  server pulls real retailer listings from Google Shopping — best price,
+  sticker price, and retailer count.
 
-- If live product search fails / rate-limits / returns nothing, the frontend
-  falls back to the curated catalog in `src/data/demoFallbacks.ts` — **add the
-  exact products you plan to show judges there before the demo.**
-- Fallback prices are labeled "reference price" on the result card.
-- If identification and fallback both fail, a friendly error screen offers retry.
-- Check `GET http://localhost:3001/api/health` to confirm which services are live.
+If the API call fails for any reason (no key, offline, timeout), the app falls
+back to the canned espresso-machine demo, so the pitch flow never breaks.
 
-## Architecture
-
-```
-React (src/) ──POST /api/analyze──────▶ Express (server/) ─▶ OpenAI vision (identify only, never prices)
-            ──POST /api/search-product▶                    ─▶ SerpAPI / Serper (pricing only)
-Library + stats: localStorage via src/lib/library.ts + calculations.ts
-```
-
-## Scripts
-
-- `npm run dev` — API + web together (dev)
-- `npm run dev:server` / `npm run dev:client` — each alone
-- `npm run build` — typecheck + production bundle
-- `npm run typecheck` — `tsc -b` across app, server, and shared types
-
-## Notes
-
-- `legacy/` holds the earlier SoFi Vaults prototype, kept out of the build.
-- Vite dev server binds all interfaces (`host: true`) so you can open the app
-  from a phone on the same Wi-Fi to demo the real camera capture.
+`.env` is gitignored — never commit API keys.
