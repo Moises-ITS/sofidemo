@@ -138,101 +138,97 @@ export function Home({ onAddToLibrary }: HomeProps) {
     reset();
   };
 
-  return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 py-8">
-      {phase === "idle" && (
-        <div className="animate-fade-up flex flex-col items-center gap-8 text-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-violet-500 to-indigo-600 text-4xl shadow-lg shadow-violet-600/30">
-            💎
-          </div>
-          <div>
-            <h1 className="text-4xl font-extrabold tracking-tight text-neutral-900">
-              What is it worth?
-            </h1>
-            <p className="mx-auto mt-3 max-w-xs text-neutral-500">
-              Take a photo of an item and we&apos;ll identify it and find its
-              current price.
-            </p>
-          </div>
-          <ImageUploader
-            onSelect={(file) => void handleSelect(file)}
-            onTakePhoto={() => setPhase("camera")}
-          />
+  if (phase === "camera") {
+    return (
+      <CameraCapture
+        onCapture={(file) => void handleSelect(file)}
+        onClose={reset}
+      />
+    );
+  }
+
+  if (phase === "preview" && photoUrl) {
+    return (
+      <div className="screen">
+        <div className="capture-heading">
+          <div className="kicker">Ready to scan</div>
         </div>
-      )}
-
-      {phase === "camera" && (
-        <CameraCapture
-          onCapture={(file) => void handleSelect(file)}
-          onClose={reset}
-        />
-      )}
-
-      {phase === "preview" && photoUrl && (
-        <div className="animate-fade-up flex flex-col items-center gap-6">
-          <div className="w-full overflow-hidden rounded-3xl shadow-xl">
-            <img
-              src={photoUrl}
-              alt="Selected item"
-              className="max-h-[26rem] w-full object-cover"
-            />
-          </div>
-          <div className="flex w-full gap-3">
-            <button
-              type="button"
-              onClick={reset}
-              className="flex-1 rounded-2xl border border-neutral-200 bg-white px-4 py-4 font-semibold text-neutral-700 transition hover:border-neutral-300 active:scale-[0.98]"
-            >
-              Change Photo
-            </button>
-            <button
-              type="button"
-              onClick={() => void handleAnalyze(photoUrl)}
-              className="flex-[1.4] rounded-2xl bg-violet-600 px-4 py-4 font-semibold text-white shadow-lg shadow-violet-600/25 transition hover:bg-violet-500 active:scale-[0.98]"
-            >
-              ✨ Identify It
-            </button>
-          </div>
+        <div className="viewfinder">
+          <img className="viewfinder__photo" src={photoUrl} alt="Selected item" />
+          <span className="viewfinder__corner viewfinder__corner--tl" />
+          <span className="viewfinder__corner viewfinder__corner--tr" />
+          <span className="viewfinder__corner viewfinder__corner--bl" />
+          <span className="viewfinder__corner viewfinder__corner--br" />
         </div>
-      )}
+        <button
+          type="button"
+          className="btn btn--primary btn--glow"
+          onClick={() => void handleAnalyze(photoUrl)}
+        >
+          <span aria-hidden>🔍</span> Identify It
+        </button>
+        <button type="button" className="btn btn--ghost" onClick={reset}>
+          Change Photo
+        </button>
+      </div>
+    );
+  }
 
-      {phase === "loading" && photoUrl && (
-        <AnalysisLoading stage={stage} imageUrl={photoUrl} />
-      )}
+  if (phase === "loading" && photoUrl) {
+    return <AnalysisLoading stage={stage} imageUrl={photoUrl} />;
+  }
 
-      {phase === "result" && analysis && photoUrl && (
-        <ProductResult
-          identification={analysis.identification}
-          candidates={analysis.candidates}
-          photoUrl={photoUrl}
-          usedFallback={analysis.usedFallback}
-          onConfirm={handleConfirm}
-          onRetry={reset}
-        />
-      )}
+  if (phase === "result" && analysis && photoUrl) {
+    return (
+      <ProductResult
+        identification={analysis.identification}
+        candidates={analysis.candidates}
+        photoUrl={photoUrl}
+        usedFallback={analysis.usedFallback}
+        onConfirm={handleConfirm}
+        onRetry={reset}
+      />
+    );
+  }
 
-      {phase === "error" && (
-        <div className="animate-fade-up flex flex-col items-center gap-6 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-amber-100 text-3xl">
-            🤔
-          </div>
+  if (phase === "error") {
+    return (
+      <div className="screen">
+        <div className="center-state">
+          <div className="center-state__badge center-state__badge--warn">🤔</div>
           <div>
-            <h2 className="text-xl font-bold text-neutral-900">
+            <div className="capture-heading__title" style={{ fontSize: 20 }}>
               Hmm, that didn&apos;t work
-            </h2>
-            <p className="mx-auto mt-2 max-w-xs text-neutral-500">
+            </div>
+            <p className="muted small" style={{ marginTop: 8, maxWidth: 260 }}>
               {errorMessage ?? "Something went wrong. Please try again."}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={reset}
-            className="rounded-2xl bg-violet-600 px-8 py-3.5 font-semibold text-white shadow-lg shadow-violet-600/25 transition hover:bg-violet-500 active:scale-[0.98]"
-          >
-            Try Again
-          </button>
         </div>
-      )}
+        <button type="button" className="btn btn--primary" onClick={reset}>
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="screen">
+      <div className="center-state">
+        <div className="center-state__badge">📷</div>
+        <div className="capture-heading">
+          <div className="kicker">Point it at a want</div>
+          <div className="capture-heading__title">What is it worth?</div>
+          <p className="muted small" style={{ maxWidth: 260, margin: "0 auto" }}>
+            Take a photo of an item and we&apos;ll identify it and find its
+            current price.
+          </p>
+        </div>
+      </div>
+      <ImageUploader
+        onSelect={(file) => void handleSelect(file)}
+        onTakePhoto={() => setPhase("camera")}
+      />
     </div>
   );
 }

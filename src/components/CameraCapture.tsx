@@ -129,78 +129,91 @@ export function CameraCapture({ onCapture, onClose }: CameraCaptureProps) {
 
   if (status === "error") {
     return (
-      <div className="animate-fade-up flex flex-col items-center gap-6 text-center">
+      <div className="screen">
         <input
           ref={fallbackInputRef}
           type="file"
           accept="image/*"
           capture="environment"
-          className="hidden"
+          style={{ display: "none" }}
           onChange={(e) => handleFallbackFile(e.currentTarget)}
         />
-        <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-amber-100 text-3xl">
-          📷
+        <div className="center-state">
+          <div className="center-state__badge center-state__badge--warn">📷</div>
+          <div>
+            <div className="capture-heading__title" style={{ fontSize: 20 }}>
+              Camera unavailable
+            </div>
+            <p className="muted small" style={{ marginTop: 8, maxWidth: 260 }}>
+              {errorMessage}
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-xl font-bold text-neutral-900">Camera unavailable</h2>
-          <p className="mx-auto mt-2 max-w-xs text-neutral-500">{errorMessage}</p>
-        </div>
-        <div className="flex w-full max-w-xs flex-col gap-3">
-          <button
-            type="button"
-            onClick={() => fallbackInputRef.current?.click()}
-            className="rounded-2xl bg-violet-600 px-6 py-3.5 font-semibold text-white shadow-lg shadow-violet-600/25 transition hover:bg-violet-500 active:scale-[0.98]"
-          >
-            Use device camera
-          </button>
-          <button
-            type="button"
-            onClick={handleClose}
-            className="rounded-2xl border border-neutral-200 bg-white px-6 py-3.5 font-semibold text-neutral-700 transition hover:border-neutral-300 active:scale-[0.98]"
-          >
-            Cancel
-          </button>
-        </div>
+        <button
+          type="button"
+          className="btn btn--primary"
+          onClick={() => fallbackInputRef.current?.click()}
+        >
+          Use device camera
+        </button>
+        <button type="button" className="btn btn--ghost" onClick={handleClose}>
+          Cancel
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="animate-fade-up flex flex-col items-center gap-6">
-      <div className="relative w-full overflow-hidden rounded-3xl bg-neutral-900 shadow-xl">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="aspect-[3/4] w-full object-cover"
-        />
-        {status === "starting" && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white/80">
-            <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/25 border-t-white" />
-            <p className="text-sm font-medium">Opening camera…</p>
-          </div>
-        )}
+    <div className="screen">
+      <div className="topbar">
         <button
           type="button"
+          className="icon-btn"
           aria-label="Close camera"
           onClick={handleClose}
-          className="absolute top-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition hover:bg-black/70"
         >
           ✕
         </button>
-        {/* Framing guides */}
-        <div className="pointer-events-none absolute inset-6 rounded-2xl border-2 border-white/25" />
+        <div className="topbar-title" style={{ textAlign: "center" }}>
+          SoFi It
+        </div>
+        <span style={{ width: 34 }} aria-hidden />
+      </div>
+
+      <div className="capture-heading">
+        <div className="kicker">Point it at a want</div>
+      </div>
+
+      <div className="viewfinder">
+        <video
+          ref={videoRef}
+          className="viewfinder__video"
+          autoPlay
+          playsInline
+          muted
+        />
+
+        <span className="viewfinder__corner viewfinder__corner--tl" />
+        <span className="viewfinder__corner viewfinder__corner--tr" />
+        <span className="viewfinder__corner viewfinder__corner--bl" />
+        <span className="viewfinder__corner viewfinder__corner--br" />
+
+        {status === "starting" && (
+          <div className="camera-status">
+            <div className="spinner" />
+            <span className="muted small">Waiting for camera access…</span>
+          </div>
+        )}
       </div>
 
       <button
         type="button"
         aria-label="Take photo"
+        className="shutter"
         onClick={handleShutter}
         disabled={status !== "ready"}
-        className="flex h-18 w-18 items-center justify-center rounded-full border-4 border-neutral-300 bg-white shadow-lg transition active:scale-95 disabled:opacity-40"
       >
-        <span className="h-13 w-13 rounded-full bg-violet-600 transition hover:bg-violet-500" />
+        <span className="shutter__dot" />
       </button>
     </div>
   );

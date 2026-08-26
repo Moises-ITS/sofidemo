@@ -20,12 +20,12 @@ export function ImageUploader({
   };
 
   return (
-    <div className="flex w-full flex-col gap-3">
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <input
         ref={uploadRef}
         type="file"
         accept="image/*"
-        className="hidden"
+        style={{ display: "none" }}
         onChange={(e) => handleFile(e.currentTarget)}
       />
 
@@ -33,15 +33,15 @@ export function ImageUploader({
         type="button"
         disabled={disabled}
         onClick={onTakePhoto}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-violet-600 px-6 py-4 text-lg font-semibold text-white shadow-lg shadow-violet-600/25 transition hover:bg-violet-500 active:scale-[0.98] disabled:opacity-50"
+        className="btn btn--primary btn--glow"
       >
-        <span aria-hidden>📷</span> Take Photo
+        <span aria-hidden>📷</span> SoFi It
       </button>
       <button
         type="button"
         disabled={disabled}
         onClick={() => uploadRef.current?.click()}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-6 py-4 text-lg font-semibold text-neutral-800 shadow-sm transition hover:border-violet-300 hover:text-violet-700 active:scale-[0.98] disabled:opacity-50"
+        className="btn btn--ghost"
       >
         <span aria-hidden>🖼️</span> Upload Image
       </button>

@@ -10,28 +10,28 @@ export function LibrarySummary({ stats }: LibrarySummaryProps) {
   const animatedTotal = useAnimatedNumber(stats.totalValue);
 
   return (
-    <div className="animate-fade-up overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-indigo-600 to-indigo-700 p-6 text-white shadow-xl shadow-indigo-900/20">
-      <p className="text-xs font-bold tracking-[0.2em] text-white/70 uppercase">
-        Total value
-      </p>
-      <p className="mt-1 text-5xl font-extrabold tracking-tight tabular-nums">
-        {formatMoney(Math.round(animatedTotal * 100) / 100)}
-      </p>
+    <div className="summary-hero chip-in">
+      <div>
+        <div className="kicker">Total value</div>
+        <div className="home-total" style={{ marginTop: 4 }}>
+          {formatMoney(Math.round(animatedTotal * 100) / 100)}
+        </div>
+      </div>
 
-      <div className="mt-5 grid grid-cols-3 gap-3 border-t border-white/15 pt-4 text-sm">
+      <div className="summary-grid">
         <div>
-          <p className="text-white/60">Items</p>
-          <p className="font-bold tabular-nums">{stats.totalItems}</p>
+          <span className="muted small">Items</span>
+          <strong>{stats.totalItems}</strong>
         </div>
         <div>
-          <p className="text-white/60">Avg. value</p>
-          <p className="font-bold tabular-nums">{formatMoney(stats.averageValue)}</p>
+          <span className="muted small">Avg. value</span>
+          <strong>{formatMoney(stats.averageValue)}</strong>
         </div>
-        <div className="min-w-0">
-          <p className="text-white/60">Top item</p>
-          <p className="truncate font-bold">
+        <div style={{ minWidth: 0 }}>
+          <span className="muted small">Top item</span>
+          <strong>
             {stats.mostExpensive ? stats.mostExpensive.name : "—"}
-          </p>
+          </strong>
         </div>
       </div>
     </div>

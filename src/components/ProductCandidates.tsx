@@ -15,10 +15,8 @@ export function ProductCandidates({
   if (candidates.length <= 1) return null;
 
   return (
-    <div className="flex flex-col gap-2">
-      <p className="text-xs font-semibold tracking-wide text-neutral-400 uppercase">
-        Not quite right? Pick a match
-      </p>
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div className="kicker">Not quite right? Pick a match</div>
       {candidates.map((candidate, index) => {
         const selected = index === selectedIndex;
         return (
@@ -26,35 +24,43 @@ export function ProductCandidates({
             key={`${candidate.title}-${index}`}
             type="button"
             onClick={() => onSelect(index)}
-            className={`flex items-center gap-3 rounded-xl border p-2.5 text-left transition ${
-              selected
-                ? "border-violet-500 bg-violet-50 ring-1 ring-violet-500"
-                : "border-neutral-200 bg-white hover:border-violet-300"
+            className={`candidate-row ${
+              selected ? "candidate-row--selected" : ""
             }`}
           >
-            {candidate.imageUrl ? (
-              <img
-                src={candidate.imageUrl}
-                alt=""
-                className="h-10 w-10 shrink-0 rounded-lg bg-neutral-100 object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.visibility = "hidden";
+            <span className="vault-icon">
+              {candidate.imageUrl ? (
+                <img
+                  src={candidate.imageUrl}
+                  alt=""
+                  style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                  onError={(e) => {
+                    e.currentTarget.style.visibility = "hidden";
+                  }}
+                />
+              ) : (
+                "🏷️"
+              )}
+            </span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span
+                style={{
+                  display: "block",
+                  fontSize: 13.5,
+                  fontWeight: 700,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
                 }}
-              />
-            ) : (
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-lg">
-                🏷️
-              </span>
-            )}
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-medium text-neutral-800">
+              >
                 {candidate.title}
               </span>
-              <span className="block text-xs text-neutral-400">
-                {candidate.retailer}
-              </span>
+              <span className="muted small">{candidate.retailer}</span>
             </span>
-            <span className="shrink-0 text-sm font-semibold text-neutral-900">
+            <span
+              className={selected ? "tone-cyan" : undefined}
+              style={{ fontSize: 14, fontWeight: 700, flexShrink: 0 }}
+            >
               {formatMoney(candidate.price, candidate.currency)}
             </span>
           </button>
