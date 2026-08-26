@@ -13,8 +13,19 @@ npm run dev:api        # terminal 1 — recognition server on :8787
 npm run dev            # terminal 2 — app on http://localhost:5173
 ```
 
-Camera works on localhost (browsers treat it as a secure context). Testing on
-a phone over LAN won't get camera access — that needs HTTPS (i.e. a deploy).
+Camera works on http://localhost only (browsers treat it as a secure
+context) — a LAN IP like `http://192.168.x.x:5173` will NOT get camera
+access; that needs HTTPS (i.e. the Vercel deploy). The browser and the OS
+both need to allow camera access for your browser.
+
+## Deploy to Vercel
+
+Import the repo at vercel.com (the Vite preset is auto-detected;
+`api/recognize.js` becomes the serverless recognition endpoint). Then in
+**Project → Settings → Environment Variables** add `ANTHROPIC_API_KEY`
+(and/or `OPENAI_API_KEY`, plus optional `VISION_PROVIDER` / `SERPAPI_KEY`)
+and redeploy. Without the env var, every snap falls back to the demo
+product. Camera works on the deployed URL from any device — it's HTTPS.
 
 ## How recognition works
 
