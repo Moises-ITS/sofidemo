@@ -20,9 +20,12 @@ a phone over LAN won't get camera access — that needs HTTPS (i.e. a deploy).
 
 `src/screens/Capture.tsx` grabs a downscaled JPEG frame from the viewfinder
 and POSTs it to `/api/recognize` (proxied to `server/api.mjs`). The server
-asks Claude to identify the product using **structured outputs** — decoding is
-grammar-constrained to a JSON schema (`{label, emoji, search_query, price,
-price_low, price_high}`), so the response always parses.
+asks a vision model to identify the product with **schema-constrained JSON
+output** (`{label, emoji, search_query, price, price_low, price_high}`), so
+the response always parses. Both providers are supported — Claude structured
+outputs or OpenAI strict `json_schema` mode. Set `ANTHROPIC_API_KEY` and/or
+`OPENAI_API_KEY`; `VISION_PROVIDER=claude|openai` picks when both are set
+(default: claude).
 
 Pricing has two modes:
 

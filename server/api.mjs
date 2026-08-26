@@ -2,14 +2,17 @@
 // POST /api/recognize {image: <base64 jpeg>, media_type}
 //   -> {label, emoji, best_price, sticker_price, retailers, source}
 //
-// Claude identifies the product with structured outputs (grammar-constrained
-// decoding against a JSON schema — the model can only emit valid JSON in this
-// shape, so parsing never breaks). If SERPAPI_KEY is set, real retailer prices
-// from Google Shopping replace Claude's estimate.
+// A vision model identifies the product with schema-constrained JSON output
+// (Claude structured outputs or OpenAI strict json_schema mode — either way
+// the model can only emit valid JSON in this shape, so parsing never breaks).
+// Set ANTHROPIC_API_KEY and/or OPENAI_API_KEY; VISION_PROVIDER=claude|openai
+// picks when both are set (default: claude). If SERPAPI_KEY is set, real
+// retailer prices from Google Shopping replace the model's estimate.
 
 import http from "node:http";
 import { readFileSync } from "node:fs";
 import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { z } from "zod";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 
@@ -27,9 +30,29 @@ try {
 }
 
 const PORT = Number(process.env.API_PORT || 8787);
-const MODEL = process.env.RECOGNIZE_MODEL || "claude-opus-5";
+const CLAUDE_MODEL = process.env.RECOGNIZE_MODEL || "claude-opus-5";
+const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
-const client = new Anthropic();
+// Pick the vision provider: VISION_PROVIDER wins when its key exists,
+// otherwise whichever key is configured (Claude first).
+function resolveProvider() {
+  const pref = (process.env.VISION_PROVIDER || "").toLowerCase();
+  const hasClaude = Boolean(process.env.ANTHROPIC_API_KEY);
+  const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
+  if (pref === "claude" || pref === "openai") {
+    if (pref === "claude" ? hasClaude : hasOpenAI) return pref;
+    console.warn(
+      `[vision] VISION_PROVIDER=${pref} but its API key is missing — auto-detecting instead`,
+    );
+  } else if (pref) {
+    console.warn(`[vision] unknown VISION_PROVIDER "${pref}" (use claude or openai)`);
+  }
+  if (hasClaude) return "claude";
+  if (hasOpenAI) return "openai";
+  return "none";
+}
+
+const PROVIDER = resolveProvider();
 
 const Recognition = z.object({
   label: z
@@ -50,9 +73,10 @@ const Recognition = z.object({
 
 const PROMPT = `Identify the single most prominent purchasable product in this photo and estimate what it typically sells for at US retailers, in dollars. Use a short shopper-friendly label ("Espresso machine", "Trail running shoes") — include the brand or model in search_query if you can see one. If nothing clearly purchasable is visible, name the most goal-like thing you can see (a bike, a couch, a trip) and price that.`;
 
-async function identify(image, media_type) {
+async function identifyClaude(image, media_type) {
+  const client = new Anthropic();
   const response = await client.messages.parse({
-    model: MODEL,
+    model: CLAUDE_MODEL,
     max_tokens: 16000,
     output_config: { format: zodOutputFormat(Recognition), effort: "low" },
     messages: [
@@ -72,6 +96,79 @@ async function identify(image, media_type) {
     throw new Error("model refused to process the image");
   }
   return response.parsed_output;
+}
+
+// Mirror of the zod schema above, for OpenAI's strict json_schema mode.
+const RECOGNITION_JSON_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    label: {
+      type: "string",
+      description: "Short shopper-friendly product name, e.g. 'Espresso machine'",
+    },
+    emoji: {
+      type: "string",
+      description: "Single emoji that best represents the product",
+    },
+    search_query: {
+      type: "string",
+      description:
+        "What a shopper would type into Google Shopping to find this exact product (include brand/model if visible)",
+    },
+    price: {
+      type: "number",
+      description: "Best single estimate of typical US retail price, in dollars",
+    },
+    price_low: {
+      type: "number",
+      description: "Low end of the realistic retail range",
+    },
+    price_high: {
+      type: "number",
+      description: "High end of the realistic retail range",
+    },
+  },
+  required: ["label", "emoji", "search_query", "price", "price_low", "price_high"],
+};
+
+async function identifyOpenAI(image, media_type) {
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const completion = await client.chat.completions.create({
+    model: OPENAI_MODEL,
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "image_url",
+            image_url: { url: `data:${media_type};base64,${image}`, detail: "auto" },
+          },
+          { type: "text", text: PROMPT },
+        ],
+      },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "recognition",
+        strict: true,
+        schema: RECOGNITION_JSON_SCHEMA,
+      },
+    },
+  });
+  const raw = completion.choices[0]?.message?.content;
+  if (!raw) {
+    throw new Error("vision model returned an empty response");
+  }
+  // Same zod validation as the Claude path, so downstream code sees one shape.
+  return Recognition.parse(JSON.parse(raw));
+}
+
+async function identify(image, media_type) {
+  return PROVIDER === "openai"
+    ? identifyOpenAI(image, media_type)
+    : identifyClaude(image, media_type);
 }
 
 // Optional deterministic pricing layer: real listings from Google Shopping.
@@ -174,9 +271,15 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
+  const vision =
+    PROVIDER === "none"
+      ? "NO KEY — recognition will fail (app falls back to demo product)"
+      : PROVIDER === "openai"
+        ? `openai (${OPENAI_MODEL})`
+        : `claude (${CLAUDE_MODEL})`;
   console.log(
     `SoFi It api on http://localhost:${PORT}` +
-      ` · anthropic key ${process.env.ANTHROPIC_API_KEY ? "loaded" : "MISSING"}` +
+      ` · vision ${vision}` +
       ` · serpapi ${process.env.SERPAPI_KEY ? "on" : "off (estimates)"}`,
   );
 });
